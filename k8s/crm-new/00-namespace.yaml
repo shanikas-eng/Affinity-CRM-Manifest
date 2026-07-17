@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crm-new
+  labels:
+    app.kubernetes.io/part-of: v3_dev
+    migration-source: node3-docker-compose

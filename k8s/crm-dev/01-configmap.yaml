@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eureka
+  namespace: crm-dev
+data:
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://pd-discovery-service:8400/eureka"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://pd-ms-auth-service:8401/api/auth-service/oauth/jwks"
+  # Public base for this stack — rewritten from Caddy :8075 / :9999 / :8108
+  PUBLIC_BASE_URL: "https://crm-dev.affiniti-crm.duckdns.org"
+  FILE_DOWNLOAD_ENDPOINT: "https://crm-dev.affiniti-crm.duckdns.org/api/system-file-service/v1/files/download/"
+  ALLIANCE_WEB_URL: "crm-dev.affiniti-crm.duckdns.org/lg"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mail
+  namespace: crm-dev
+data:
+  MAIL_EXTERNAL_HOST: "10.62.111.20"
+  MAIL_EXTERNAL_PORT: "25"
+  MAIL_EXTERNAL_USERNAME: "ebill@dialog.lk"
+  MAIL_EXTERNAL_TRANSPORT_PROTOCOL: "smtp"
+  MAIL_EXTERNAL_SMTP_AUTH: "false"
+  MAIL_EXTERNAL_SMTP_STARTTLS_ENABLE: "true"
+  MAIL_EXTERNAL_SMTP_SSL_TRUST: "10.62.111.20"
+  MAIL_PORT: "32"
+  MAIL_TRANSPORT_PROTOCOL: "smtp"
+  MAIL_SMTP_AUTH: "false"
+  MAIL_SMTP_STARTTLS_ENABLE: "true"
+  MAIL_SMTP_SSL_TRUST: "192.168.10.50"

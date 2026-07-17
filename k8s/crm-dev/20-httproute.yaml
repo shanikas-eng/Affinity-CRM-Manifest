@@ -1,0 +1,60 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: crm-dev
+  namespace: crm-dev
+spec:
+  parentRefs:
+    - name: public
+      namespace: gateway-system
+      sectionName: https-crm
+  hostnames:
+    - "crm-dev.affiniti-crm.duckdns.org"
+  rules:
+    # Auth service — dedicated path
+    - matches:
+        - path: { type: PathPrefix, value: /api/auth-service }
+      backendRefs:
+        - name: pd-ms-auth-service
+          port: 8401
+
+    # System-file-service — used to be Caddy :8108/:7108, now under /api/system-file-service
+    - matches:
+        - path: { type: PathPrefix, value: /api/system-file-service }
+      backendRefs:
+        - name: pd-ms-system-file-service
+          port: 8405
+
+    # All other API traffic → API Gateway
+    - matches:
+        - path: { type: PathPrefix, value: /api }
+      backendRefs:
+        - name: pd-api-gateway-service
+          port: 8402
+
+    # Old Caddy :9999/lg + :8075/lg → web JSP (Tomcat, context-path /lg/)
+    - matches:
+        - path: { type: PathPrefix, value: /lg }
+      backendRefs:
+        - name: pd-crm-web-jsp
+          port: 8222
+
+    # Old Caddy :9999/md + :8075/md → react-frontend (strip /md prefix like Caddy did)
+    - matches:
+        - path: { type: PathPrefix, value: /md }
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: pd-crm-react-frontend
+          port: 80
+
+    # Root — react-frontend (matches Caddy :8075 root behaviour)
+    - matches:
+        - path: { type: PathPrefix, value: / }
+      backendRefs:
+        - name: pd-crm-react-frontend
+          port: 80

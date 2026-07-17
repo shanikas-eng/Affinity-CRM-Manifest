@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crm-dev
+  namespace: argocd
+spec:
+  project: crm
+  source:
+    repoURL: <REPLACE-WITH-GIT-REPO-URL>
+    targetRevision: main
+    path: k8s/crm-dev
+    directory:
+      recurse: false
+      exclude: "00-namespace.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crm-dev
+  syncPolicy:
+    # automated:
+    #   prune: true
+    #   selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/template/spec/containers/0/image

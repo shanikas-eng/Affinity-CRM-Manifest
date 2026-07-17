@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crm-new
+  namespace: argocd
+  # Uncomment once you're happy with the sync behavior in staging:
+  # finalizers:
+  #   - resources-finalizer.argocd.argoproj.io
+spec:
+  project: crm
+  source:
+    repoURL: <REPLACE-WITH-GIT-REPO-URL>   # e.g. https://gitlab.com/affiniti/k8s-manifests.git
+    targetRevision: main
+    path: k8s/crm-new
+    directory:
+      recurse: false
+      # Skip the Namespace file — namespace + secrets are managed out-of-band.
+      exclude: "00-namespace.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crm-new
+  syncPolicy:
+    # Start manual. Flip `automated:` on after a successful first sync.
+    # automated:
+    #   prune: true
+    #   selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    # Deployment image tag will be bumped by CI (kubectl set image / kustomize edit),
+    # so don't let Argo revert it back to git.
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/template/spec/containers/0/image
