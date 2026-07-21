@@ -115,7 +115,7 @@ spec:
       imagePullSecrets: [{ name: dockerhub }]
       containers:
         - name: app
-          image: sysadminaffiniti/affiniti_ms_core_service:1.0.41.1262
+          image: sysadminaffiniti/affiniti_ms_core_service:1.0.41.1300
           imagePullPolicy: Always
           ports: [{ containerPort: 8403 }]
           env:
