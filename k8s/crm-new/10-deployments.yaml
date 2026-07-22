@@ -286,7 +286,7 @@ spec:
       imagePullSecrets: [{ name: dockerhub }]
       containers:
         - name: app
-          image: sysadminaffiniti/affiniti_crm_marketing_module:1.0.58.1313
+          image: sysadminaffiniti/affiniti_crm_marketing_module:1.0.58.1402
           imagePullPolicy: Always
           ports: [{ containerPort: 8408 }]
           env:
