@@ -324,7 +324,7 @@ spec:
       imagePullSecrets: [{ name: dockerhub }]
       containers:
         - name: app
-          image: sysadminaffiniti/affiniti_cdb_crm_mobile_rest:1.0.0.1314
+          image: sysadminaffiniti/affiniti_cdb_crm_mobile_rest:1.0.0.1401
           imagePullPolicy: Always
           ports: [{ containerPort: 8409 }]
           env:
