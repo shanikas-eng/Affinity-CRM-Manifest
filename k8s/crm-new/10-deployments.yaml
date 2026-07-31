@@ -358,7 +358,7 @@ spec:
       imagePullSecrets: [{ name: dockerhub }]
       containers:
         - name: app
-          image: sysadminaffiniti/affiniti_crm_front_end:0.1.0.1995
+          image: sysadminaffiniti/affiniti_crm_front_end:0.1.0.1997
           imagePullPolicy: Always   # mutable tag — always check registry on pod start
           ports: [{ containerPort: 80 }]
 ---
