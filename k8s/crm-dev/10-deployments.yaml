@@ -109,7 +109,7 @@ spec:
       imagePullSecrets: [{ name: dockerhub }]
       containers:
         - name: app
-          image: sysadminaffiniti/affiniti_ms_dynamic_contact_and_lead:pd-revamp-latest
+          image: sysadminaffiniti/affiniti_ms_dynamic_contact_and_lead:1.0.41.2078
           imagePullPolicy: Always
           ports: [{ containerPort: 8403 }]
           env:
