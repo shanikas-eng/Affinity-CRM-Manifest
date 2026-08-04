@@ -313,7 +313,7 @@ spec:
       imagePullSecrets: [{ name: dockerhub }]
       containers:
         - name: app
-          image: sysadminaffiniti/affiniti_crm_web_jsp:pd-revamp-latest
+          image: sysadminaffiniti/affiniti_crm_web_jsp:1.0.95.2088
           imagePullPolicy: Always
           ports: [{ containerPort: 8222 }]
           env:
