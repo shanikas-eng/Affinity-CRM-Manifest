@@ -7,9 +7,9 @@ data:
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://pd-discovery-service:8400/eureka"
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://pd-ms-auth-service:8401/api/auth-service/oauth/jwks"
   # Public base for this stack — rewritten from Caddy :8075 / :9999 / :8108
-  PUBLIC_BASE_URL: "https://crm-dev.affiniti-crm.duckdns.org"
-  FILE_DOWNLOAD_ENDPOINT: "https://crm-dev.affiniti-crm.duckdns.org/api/system-file-service/v1/files/download/"
-  ALLIANCE_WEB_URL: "crm-dev.affiniti-crm.duckdns.org/lg"
+  PUBLIC_BASE_URL: "https://crm-dev.affiniti-crm2.duckdns.org"
+  FILE_DOWNLOAD_ENDPOINT: "https://crm-dev.affiniti-crm2.duckdns.org/api/system-file-service/v1/files/download/"
+  ALLIANCE_WEB_URL: "crm-dev.affiniti-crm2.duckdns.org/lg"
 ---
 apiVersion: v1
 kind: ConfigMap

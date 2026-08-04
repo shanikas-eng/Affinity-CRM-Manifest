@@ -9,7 +9,7 @@ spec:
       namespace: gateway-system
       sectionName: https-crm
   hostnames:
-    - "crm-dev.affiniti-crm.duckdns.org"
+    - "crm-dev.affiniti-crm2.duckdns.org"
   rules:
     # Auth service — dedicated path
     - matches:
