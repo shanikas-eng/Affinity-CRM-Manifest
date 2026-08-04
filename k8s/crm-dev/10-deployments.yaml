@@ -356,7 +356,7 @@ spec:
       imagePullSecrets: [{ name: dockerhub }]
       containers:
         - name: app
-          image: sysadminaffiniti/affiniti_hnbf_360_es_sv:pd-revamp-latest
+          image: sysadminaffiniti/affiniti_hnbf_360_es_sv:1.0.1.2086
           imagePullPolicy: Always
           env:
             - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
