@@ -17,7 +17,7 @@ spec:
       imagePullSecrets: [{ name: dockerhub }]
       containers:
         - name: app
-          image: sysadminaffiniti/affiniti_dms_ms_discovery_server:pd-revamp-latest
+          image: sysadminaffiniti/affiniti_dms_ms_discovery_server:1.0.0.2077
           imagePullPolicy: Always
           ports: [{ containerPort: 8400 }]
           env:
