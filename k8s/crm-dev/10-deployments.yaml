@@ -421,7 +421,7 @@ spec:
       imagePullSecrets: [{ name: dockerhub }]
       containers:
         - name: app
-          image: sysadminaffiniti/affiniti_crm_notify_sv:pd-revamp-latest
+          image: sysadminaffiniti/affiniti_crm_notify_sv:1.0.0.2085
           imagePullPolicy: Always
           envFrom:
             - configMapRef: { name: mail }
