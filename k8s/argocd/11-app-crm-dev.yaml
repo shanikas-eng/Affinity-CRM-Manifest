@@ -6,7 +6,7 @@ metadata:
 spec:
   project: crm
   source:
-    repoURL: <REPLACE-WITH-GIT-REPO-URL>
+    repoURL: https://github.com/shanikas-eng/Affinity-CRM-Manifest.git
     targetRevision: main
     path: k8s/crm-dev
     directory:
@@ -29,8 +29,4 @@ spec:
         duration: 10s
         factor: 2
         maxDuration: 3m
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      jsonPointers:
-        - /spec/template/spec/containers/0/image
+

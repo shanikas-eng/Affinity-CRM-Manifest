@@ -340,6 +340,10 @@ spec:
   ports: [{ port: 8222, targetPort: 8222 }]
 
 # ─── Worker/cron services (no ClusterIP Service needed) ────────────────────
+# NOTE: pd-360-es-sv, pd-crm-contact-sync-sv, pd-crm-notify-sv are scaled to 0
+# due to Spring Security 6 incompatibility in affiniti-common-1.0.0-SNAPSHOT.jar.
+# AuditAspect fails with ClassNotFoundException: org.springframework.security.access.AccessDeniedException
+# Fix: rebuild affiniti-common against Spring Security 6, push new images, then set replicas: 1.
 
 ---
 apiVersion: apps/v1
@@ -348,7 +352,7 @@ metadata:
   name: pd-360-es-sv
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-360-es-sv } }
   template:
     metadata: { labels: { app: pd-360-es-sv } }
@@ -383,7 +387,7 @@ metadata:
   name: pd-crm-contact-sync-sv
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-crm-contact-sync-sv } }
   template:
     metadata: { labels: { app: pd-crm-contact-sync-sv } }
@@ -413,7 +417,7 @@ metadata:
   name: pd-crm-notify-sv
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-crm-notify-sv } }
   template:
     metadata: { labels: { app: pd-crm-notify-sv } }

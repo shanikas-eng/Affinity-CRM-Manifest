@@ -9,7 +9,7 @@ metadata:
 spec:
   project: crm
   source:
-    repoURL: <REPLACE-WITH-GIT-REPO-URL>   # e.g. https://gitlab.com/affiniti/k8s-manifests.git
+    repoURL: https://github.com/shanikas-eng/Affinity-CRM-Manifest.git
     targetRevision: main
     path: k8s/crm-new
     directory:
