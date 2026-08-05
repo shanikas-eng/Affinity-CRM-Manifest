@@ -57,6 +57,12 @@ rules:
   - apiGroups: [""]
     resources: [namespaces]
     verbs: [get, list, watch]
+  # Kubetail's cluster-api queries `nodes` cluster-wide to show which node
+  # each pod runs on and to enumerate log-file paths on disk. Without this
+  # the UI throws: `nodes is forbidden ... cannot list resource "nodes"`.
+  - apiGroups: [""]
+    resources: [nodes]
+    verbs: [get, list, watch]
 
 # ──────────────────────────────────────────────────────────────────────────
 # Shared ClusterRole 3/3 — access to Kubetail's aggregated API server
