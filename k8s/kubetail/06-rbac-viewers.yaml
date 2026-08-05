@@ -1,0 +1,151 @@
+# Viewer roles and ServiceAccounts.
+#
+# Three tiers of access:
+#   1. logs-viewer-all       -> read pods/logs in ALL namespaces (cluster-wide)
+#   2. logs-viewer-crm-dev   -> read pods/logs ONLY in crm-dev
+#   3. logs-viewer-crm-new   -> read pods/logs ONLY in crm-new
+#
+# All are read-only. Users authenticate to Kubetail by pasting the SA token
+# on the login page. See docs/kubetail-user-access.md for how to mint tokens.
+
+# ──────────────────────────────────────────────────────────────────────────
+# Shared ClusterRole — read-only pod + log access
+# Bound cluster-wide (viewer-all) or scoped to a namespace (RoleBinding).
+# ──────────────────────────────────────────────────────────────────────────
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: logs-viewer
+rules:
+  - apiGroups: [""]
+    resources: [namespaces]
+    verbs: [get, list, watch]
+  - apiGroups: [""]
+    resources: [pods, pods/log]
+    verbs: [get, list, watch]
+  - apiGroups: [apps]
+    resources: [deployments, replicasets, statefulsets, daemonsets]
+    verbs: [get, list, watch]
+  - apiGroups: [batch]
+    resources: [jobs, cronjobs]
+    verbs: [get, list, watch]
+
+# ──────────────────────────────────────────────────────────────────────────
+# Tier 1 — logs-viewer-all: cluster-wide read access
+# ──────────────────────────────────────────────────────────────────────────
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: logs-viewer-all
+  namespace: kubetail
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logs-viewer-all
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logs-viewer
+subjects:
+  - kind: ServiceAccount
+    name: logs-viewer-all
+    namespace: kubetail
+
+# ──────────────────────────────────────────────────────────────────────────
+# Tier 2 — logs-viewer-crm-dev: only crm-dev namespace
+# ──────────────────────────────────────────────────────────────────────────
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: logs-viewer-crm-dev
+  namespace: kubetail
+
+# Namespace listing (needed for the UI to show *any* namespace in the picker)
+# We still grant list of *namespaces* cluster-wide, but the API will filter
+# access to pods/logs down to just crm-dev via the RoleBinding below.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logs-viewer-crm-dev-ns-list
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logs-viewer-namespace-list
+subjects:
+  - kind: ServiceAccount
+    name: logs-viewer-crm-dev
+    namespace: kubetail
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: logs-viewer-crm-dev
+  namespace: crm-dev
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logs-viewer
+subjects:
+  - kind: ServiceAccount
+    name: logs-viewer-crm-dev
+    namespace: kubetail
+
+# ──────────────────────────────────────────────────────────────────────────
+# Tier 3 — logs-viewer-crm-new: only crm-new namespace
+# ──────────────────────────────────────────────────────────────────────────
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: logs-viewer-crm-new
+  namespace: kubetail
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logs-viewer-crm-new-ns-list
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logs-viewer-namespace-list
+subjects:
+  - kind: ServiceAccount
+    name: logs-viewer-crm-new
+    namespace: kubetail
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: logs-viewer-crm-new
+  namespace: crm-new
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logs-viewer
+subjects:
+  - kind: ServiceAccount
+    name: logs-viewer-crm-new
+    namespace: kubetail
+
+# ──────────────────────────────────────────────────────────────────────────
+# Small helper ClusterRole: allow listing namespace *names* only.
+# Needed so the UI can show a namespace picker to scoped viewers.
+# ──────────────────────────────────────────────────────────────────────────
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: logs-viewer-namespace-list
+rules:
+  - apiGroups: [""]
+    resources: [namespaces]
+    verbs: [get, list, watch]

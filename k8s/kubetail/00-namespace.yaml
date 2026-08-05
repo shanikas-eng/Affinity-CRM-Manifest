@@ -1,0 +1,23 @@
+# Kubetail — general-purpose logging dashboard for Kubernetes.
+#
+# The Kubetail *application itself* (dashboard + cluster-api + cluster-agent
+# DaemonSet) is installed via Helm on the master, NOT via these manifests.
+# Command used (one-time):
+#
+#   helm repo add kubetail https://kubetail-org.github.io/helm-charts/
+#   helm upgrade --install kubetail kubetail/kubetail \
+#     --namespace kubetail --create-namespace \
+#     --set kubetail.dashboard.authMode=token \
+#     --set kubetail.dashboard.runtimeConfig.allowedOrigins='{https://kubetail.affiniti-crm2.duckdns.org}'
+#
+# These YAMLs (in the manifest repo, synced by ArgoCD) contain only:
+#   00-namespace.yaml     -> namespace declaration (idempotent)
+#   06-rbac-viewers.yaml  -> per-user ServiceAccounts + RBAC for log viewers
+#   20-httproute.yaml     -> Gateway HTTPRoute exposing the dashboard
+#
+# User access + token minting: docs/kubetail-user-access.md
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubetail

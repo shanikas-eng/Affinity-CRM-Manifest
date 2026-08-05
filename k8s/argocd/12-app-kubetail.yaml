@@ -1,0 +1,42 @@
+# Kubetail — ArgoCD Application.
+#
+# NOTE: this Application manages only the *namespace, RBAC, and HTTPRoute*
+# for Kubetail. The Kubetail dashboard + cluster-api + cluster-agent
+# workloads themselves are installed on the master via Helm (see
+# docs/kubetail-user-access.md — "Reinstall from scratch").
+#
+# Why not manage the Helm release from Argo? The chart pulls in a DaemonSet
+# and multiple deployments with node-specific tuning; keeping it on the
+# Helm CLI on master is simpler until we standardise on ApplicationSet or
+# a proper Helm-in-Argo pattern.
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubetail
+  namespace: argocd
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/shanikas-eng/Affinity-CRM-Manifest.git
+    targetRevision: main
+    path: k8s/kubetail
+    directory:
+      recurse: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kubetail
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

@@ -1,0 +1,43 @@
+# Platform AppProject — for cluster-support services (Kubetail, and future
+# tooling like Grafana / kube-prometheus / Loki).
+#
+# Scoped separately from the `crm` project so a bug in platform tooling
+# can't blast the CRM apps and vice-versa.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform
+  namespace: argocd
+spec:
+  description: "Cluster-support tooling (Kubetail, future observability, etc.)"
+  sourceRepos:
+    - "https://github.com/shanikas-eng/Affinity-CRM-Manifest.git"
+  destinations:
+    - namespace: kubetail
+      server: https://kubernetes.default.svc
+    - namespace: crm-dev        # for RoleBindings that scope viewers into crm-dev
+      server: https://kubernetes.default.svc
+    - namespace: crm-new        # for RoleBindings that scope viewers into crm-new
+      server: https://kubernetes.default.svc
+  # Kubetail's RBAC needs cluster-scoped resources (ClusterRole,
+  # ClusterRoleBinding, Namespace).
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: ServiceAccount
+    - group: ""
+      kind: ConfigMap
+    - group: ""
+      kind: Service
+    - group: rbac.authorization.k8s.io
+      kind: Role
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
