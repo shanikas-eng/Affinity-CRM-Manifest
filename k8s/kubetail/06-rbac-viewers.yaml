@@ -30,6 +30,13 @@ rules:
   - apiGroups: [batch]
     resources: [jobs, cronjobs]
     verbs: [get, list, watch]
+  # Kubetail's aggregated API server. The dashboard proxies log-stream and
+  # download requests through /cluster-api-proxy -> api.kubetail.com/v1.
+  # Without this, the UI shows the pod list but log tabs spin forever with
+  # 403s on /cluster-api-proxy/graphql in the dashboard logs.
+  - apiGroups: [api.kubetail.com]
+    resources: [graphql, download, healthz]
+    verbs: [get, list, create]
 
 # ──────────────────────────────────────────────────────────────────────────
 # Tier 1 — logs-viewer-all: cluster-wide read access
