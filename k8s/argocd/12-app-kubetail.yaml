@@ -26,13 +26,20 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: kubetail
+  # Traefik's Gateway controller writes status back into HTTPRoute and can
+  # normalise fields Argo then re-diffs (backendRef defaults, etc.). Ignore
+  # status entirely; RBAC + hostname changes still trigger sync.
+  ignoreDifferences:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      jsonPointers:
+        - /status
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ApplyOutOfSyncOnly=true
       - ServerSideApply=true
     retry:
       limit: 5
