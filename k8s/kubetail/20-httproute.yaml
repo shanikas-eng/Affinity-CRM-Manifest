@@ -19,5 +19,8 @@ spec:
     - matches:
         - path: { type: PathPrefix, value: / }
       backendRefs:
-        - name: kubetail-dashboard
+        - group: ""
+          kind: Service
+          name: kubetail-dashboard
           port: 8080
+          weight: 1
