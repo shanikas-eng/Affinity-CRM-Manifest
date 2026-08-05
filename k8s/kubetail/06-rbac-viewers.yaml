@@ -7,10 +7,27 @@
 #
 # All are read-only. Users authenticate to Kubetail by pasting the SA token
 # on the login page. See docs/kubetail-user-access.md for how to mint tokens.
+#
+# RBAC design — why three ClusterRoles instead of one:
+#
+#   logs-viewer                 (namespaced verbs: pods, logs, workloads)
+#     -> RoleBinding in target ns  → scoped viewers see their ns only
+#     -> ClusterRoleBinding        → logs-viewer-all sees every ns
+#
+#   logs-viewer-namespace-list  (cluster-scoped: list namespaces)
+#     -> ClusterRoleBinding to ALL viewers so the UI namespace-picker works
+#
+#   logs-viewer-api-access      (cluster-scoped: api.kubetail.com/graphql etc.)
+#     -> ClusterRoleBinding to ALL viewers so log-tail requests through the
+#        aggregated API server succeed (this is *not* namespaced; a plain
+#        RoleBinding cannot grant it, even for scoped viewers).
+#
+# The aggregated API server (kubetail-cluster-api) then impersonates the
+# user when calling the core k8s API, so namespace-scoped pod/log access
+# is still enforced via the RoleBinding.
 
 # ──────────────────────────────────────────────────────────────────────────
-# Shared ClusterRole — read-only pod + log access
-# Bound cluster-wide (viewer-all) or scoped to a namespace (RoleBinding).
+# Shared ClusterRole 1/3 — namespaced read-only pod + workload access
 # ──────────────────────────────────────────────────────────────────────────
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -18,9 +35,6 @@ kind: ClusterRole
 metadata:
   name: logs-viewer
 rules:
-  - apiGroups: [""]
-    resources: [namespaces]
-    verbs: [get, list, watch]
   - apiGroups: [""]
     resources: [pods, pods/log]
     verbs: [get, list, watch]
@@ -30,10 +44,30 @@ rules:
   - apiGroups: [batch]
     resources: [jobs, cronjobs]
     verbs: [get, list, watch]
-  # Kubetail's aggregated API server. The dashboard proxies log-stream and
-  # download requests through /cluster-api-proxy -> api.kubetail.com/v1.
-  # Without this, the UI shows the pod list but log tabs spin forever with
-  # 403s on /cluster-api-proxy/graphql in the dashboard logs.
+
+# ──────────────────────────────────────────────────────────────────────────
+# Shared ClusterRole 2/3 — cluster-scoped namespace listing (for UI picker)
+# ──────────────────────────────────────────────────────────────────────────
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: logs-viewer-namespace-list
+rules:
+  - apiGroups: [""]
+    resources: [namespaces]
+    verbs: [get, list, watch]
+
+# ──────────────────────────────────────────────────────────────────────────
+# Shared ClusterRole 3/3 — access to Kubetail's aggregated API server
+# (cluster-scoped resources under api.kubetail.com/v1)
+# ──────────────────────────────────────────────────────────────────────────
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: logs-viewer-api-access
+rules:
   - apiGroups: [api.kubetail.com]
     resources: [graphql, download, healthz]
     verbs: [get, list, create]
@@ -62,6 +96,34 @@ subjects:
     name: logs-viewer-all
     namespace: kubetail
 
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logs-viewer-all-api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logs-viewer-api-access
+subjects:
+  - kind: ServiceAccount
+    name: logs-viewer-all
+    namespace: kubetail
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logs-viewer-all-ns-list
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logs-viewer-namespace-list
+subjects:
+  - kind: ServiceAccount
+    name: logs-viewer-all
+    namespace: kubetail
+
 # ──────────────────────────────────────────────────────────────────────────
 # Tier 2 — logs-viewer-crm-dev: only crm-dev namespace
 # ──────────────────────────────────────────────────────────────────────────
@@ -72,9 +134,6 @@ metadata:
   name: logs-viewer-crm-dev
   namespace: kubetail
 
-# Namespace listing (needed for the UI to show *any* namespace in the picker)
-# We still grant list of *namespaces* cluster-wide, but the API will filter
-# access to pods/logs down to just crm-dev via the RoleBinding below.
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -84,6 +143,20 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: logs-viewer-namespace-list
+subjects:
+  - kind: ServiceAccount
+    name: logs-viewer-crm-dev
+    namespace: kubetail
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logs-viewer-crm-dev-api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logs-viewer-api-access
 subjects:
   - kind: ServiceAccount
     name: logs-viewer-crm-dev
@@ -130,6 +203,20 @@ subjects:
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logs-viewer-crm-new-api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logs-viewer-api-access
+subjects:
+  - kind: ServiceAccount
+    name: logs-viewer-crm-new
+    namespace: kubetail
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: logs-viewer-crm-new
@@ -142,17 +229,3 @@ subjects:
   - kind: ServiceAccount
     name: logs-viewer-crm-new
     namespace: kubetail
-
-# ──────────────────────────────────────────────────────────────────────────
-# Small helper ClusterRole: allow listing namespace *names* only.
-# Needed so the UI can show a namespace picker to scoped viewers.
-# ──────────────────────────────────────────────────────────────────────────
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: logs-viewer-namespace-list
-rules:
-  - apiGroups: [""]
-    resources: [namespaces]
-    verbs: [get, list, watch]
