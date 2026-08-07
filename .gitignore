@@ -1,0 +1,3 @@
+# Never commit filled-in secrets. Only the .example.yaml templates are tracked.
+secrets.*.yaml
+!secrets.example.yaml

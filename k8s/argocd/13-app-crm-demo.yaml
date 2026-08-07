@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crm-demo
+  namespace: argocd
+spec:
+  project: crm
+  source:
+    repoURL: https://github.com/shanikas-eng/Affinity-CRM-Manifest.git
+    targetRevision: main
+    path: k8s/crm-demo
+    directory:
+      recurse: false
+      # Namespace + secrets are managed out-of-band; also skip the sample.
+      exclude: "{00-namespace.yaml,secrets.example.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crm-demo
+  syncPolicy:
+    # Start manual. Enable automated sync only after first clean sync + smoke test.
+    # automated:
+    #   prune: true
+    #   selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    # Image tag will drift when CI does `kubectl set image`.
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/template/spec/containers/0/image

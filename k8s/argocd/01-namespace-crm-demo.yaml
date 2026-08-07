@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crm-demo
+  labels:
+    app.kubernetes.io/part-of: docker-composer-demo
+    migration-source: 178.128.19.250-docker-compose

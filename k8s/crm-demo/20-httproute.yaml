@@ -1,0 +1,62 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: crm-demo
+  namespace: crm-demo
+spec:
+  parentRefs:
+    - name: public
+      namespace: gateway-system
+      sectionName: https-crm
+  hostnames:
+    - "crm-demo.affiniti-crm2.duckdns.org"
+  rules:
+    # Auth service — dedicated path (must come before catch-all /api).
+    # Old compose exposed :8501 → 8401 for direct access.
+    - matches:
+        - path: { type: PathPrefix, value: /api/auth-service }
+      backendRefs:
+        - name: pd-ms-auth-service
+          port: 8401
+
+    # System-file-service — old compose :7008 → 8405
+    - matches:
+        - path: { type: PathPrefix, value: /api/system-file-service }
+      backendRefs:
+        - name: pd-ms-system-file-service
+          port: 8405
+
+    # All other API traffic → API Gateway (old compose :9001 → 8402)
+    - matches:
+        - path: { type: PathPrefix, value: /api }
+      backendRefs:
+        - name: pd-api-gateway-service
+          port: 8402
+
+    # JSP legacy web (old compose :8509 → 8222, context-path /lg/)
+    - matches:
+        - path: { type: PathPrefix, value: /lg }
+      backendRefs:
+        - name: pd-crm-web-jsp
+          port: 8222
+
+    # React frontend under /md (old Caddy behaviour on other nodes)
+    # Strip /md prefix so the SPA serves at root.
+    - matches:
+        - path: { type: PathPrefix, value: /md }
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: pd-crm-react-frontend
+          port: 80
+
+    # Root — react frontend (old compose :8508 → 80)
+    - matches:
+        - path: { type: PathPrefix, value: / }
+      backendRefs:
+        - name: pd-crm-react-frontend
+          port: 80

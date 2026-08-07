@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crm-demo
+  labels:
+    stack: crm
+    tier: demo

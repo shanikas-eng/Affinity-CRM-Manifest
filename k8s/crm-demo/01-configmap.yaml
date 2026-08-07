@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eureka
+  namespace: crm-demo
+data:
+  # Eureka + JWT shared config for all Spring Boot services in this namespace.
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://pd-discovery-service:8400/eureka"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://pd-ms-auth-service:8401/api/auth-service/oauth/jwks"
+
+  # Public base for this stack — old Docker Compose used http://178.128.19.250:<port>
+  # In k8s it is served via Gateway API HTTPRoute (see 20-httproute.yaml).
+  PUBLIC_BASE_URL: "https://crm-demo.affiniti-crm2.duckdns.org"
+  FILE_DOWNLOAD_ENDPOINT: "https://crm-demo.affiniti-crm2.duckdns.org/api/system-file-service/v1/files/download/"
+  ALLIANCE_WEB_URL: "crm-demo.affiniti-crm2.duckdns.org/lg"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mail
+  namespace: crm-demo
+data:
+  # Placeholder mail config — the demo stack's docker-compose never set these.
+  # Kept for parity with crm-dev so the notify worker (if enabled later) starts.
+  MAIL_EXTERNAL_HOST: "10.62.111.20"
+  MAIL_EXTERNAL_PORT: "25"
+  MAIL_EXTERNAL_USERNAME: "ebill@dialog.lk"
+  MAIL_EXTERNAL_TRANSPORT_PROTOCOL: "smtp"
+  MAIL_EXTERNAL_SMTP_AUTH: "false"
+  MAIL_EXTERNAL_SMTP_STARTTLS_ENABLE: "true"
+  MAIL_EXTERNAL_SMTP_SSL_TRUST: "10.62.111.20"
+  MAIL_PORT: "32"
+  MAIL_TRANSPORT_PROTOCOL: "smtp"
+  MAIL_SMTP_AUTH: "false"
+  MAIL_SMTP_STARTTLS_ENABLE: "true"
+  MAIL_SMTP_SSL_TRUST: "192.168.10.50"

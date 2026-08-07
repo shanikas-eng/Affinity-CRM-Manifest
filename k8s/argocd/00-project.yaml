@@ -14,6 +14,8 @@ spec:
       server: https://kubernetes.default.svc
     - namespace: crm-dev
       server: https://kubernetes.default.svc
+    - namespace: crm-demo
+      server: https://kubernetes.default.svc
     # HTTPRoute lives in the app namespace; no cluster-scoped writes needed.
   clusterResourceWhitelist: []
   namespaceResourceWhitelist:

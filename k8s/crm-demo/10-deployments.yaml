@@ -1,0 +1,428 @@
+# crm-demo — migrated from /opt/Docker/ProductDevelopment/Docker-Composer/docker-compose.yml
+# on 178.128.19.250 (Node "avonet-demo" once joined).
+#
+# Original stack was Docker Compose network pd-qa-network; ports were exposed on the
+# host as :8500/:8501/:9001/... — none of those are needed here because Services + the
+# shared Gateway HTTPRoute now front the pods.
+#
+# Image tag conventions in the source compose are all MUTABLE:
+#   pd-qa-latest, pd-develop-latest, pd4-qa-latest, mrkt-drop1-latest
+# We keep them + imagePullPolicy: Always so `kubectl rollout restart` pulls fresh.
+# Move to immutable :1.0.x.NNNN tags whenever the CI pipeline is wired here.
+#
+# DB: external MariaDB at 178.128.24.68:55306, schema pdcrmdev03 — NOT the same
+# port/schema as crm-dev (which is :3306 / pdcrmdev02). Credentials live in the
+# `mariadb` Secret (see docs/crm-demo-secrets.md).
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-discovery-service
+  namespace: crm-demo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-discovery-service } }
+  template:
+    metadata: { labels: { app: pd-discovery-service } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_dms_ms_discovery_server:pd-qa-latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 8400 }]
+          env:
+            - { name: SERVER_PORT, value: "8400" }
+            - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, value: "http://pd-discovery-service:8400/eureka" }
+            - { name: EUREKA_INSTANCE_PREFER_IP_ADDRESS, value: "true" }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-discovery-service, namespace: crm-demo }
+spec:
+  selector: { app: pd-discovery-service }
+  ports: [{ port: 8400, targetPort: 8400 }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-ms-auth-service
+  namespace: crm-demo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-ms-auth-service } }
+  template:
+    metadata: { labels: { app: pd-ms-auth-service } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_dms_ms_auth_service:pd-develop-latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 8401 }]
+          env:
+            - { name: SERVER_PORT, value: "8401" }
+            - { name: SPRING_CONFIG_USELEGACYPROCESSING, value: "true" }
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-ms-auth-service, namespace: crm-demo }
+spec:
+  selector: { app: pd-ms-auth-service }
+  ports: [{ port: 8401, targetPort: 8401 }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-api-gateway-service
+  namespace: crm-demo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-api-gateway-service } }
+  template:
+    metadata: { labels: { app: pd-api-gateway-service } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_dms_ms_api_gateway_service:pd-qa-latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 8402 }]
+          env:
+            - { name: SERVER_PORT, value: "8402" }
+            - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, valueFrom: { configMapKeyRef: { name: eureka, key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE } } }
+            - { name: EUREKA_INSTANCE_PREFER_IP_ADDRESS, value: "true" }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-api-gateway-service, namespace: crm-demo }
+spec:
+  selector: { app: pd-api-gateway-service }
+  ports: [{ port: 8402, targetPort: 8402 }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-ms-contact-lead-service
+  namespace: crm-demo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-ms-contact-lead-service } }
+  template:
+    metadata: { labels: { app: pd-ms-contact-lead-service } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_ms_dynamic_contact_and_lead:pd-qa-latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 8403 }]
+          env:
+            - { name: SERVER_PORT, value: "8403" }
+            - { name: SPRING_CONFIG_USELEGACYPROCESSING, value: "true" }
+            - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, valueFrom: { configMapKeyRef: { name: eureka, key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE } } }
+            - { name: EUREKA_INSTANCE_PREFER_IP_ADDRESS, value: "true" }
+            - { name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWKSETURI, valueFrom: { configMapKeyRef: { name: eureka, key: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI } } }
+            - { name: ALLIANCE_WEB_URL,        valueFrom: { configMapKeyRef: { name: eureka, key: ALLIANCE_WEB_URL } } }
+            - { name: FILE_DOWNLOAD_ENDPOINT,  valueFrom: { configMapKeyRef: { name: eureka, key: FILE_DOWNLOAD_ENDPOINT } } }
+            - { name: SECURITY_OAUTH2_RESOURCE_TOKENINFOURI, value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            - { name: AUTH_TOKEN_CHECK_URL,    value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-ms-contact-lead-service, namespace: crm-demo }
+spec:
+  selector: { app: pd-ms-contact-lead-service }
+  ports: [{ port: 8403, targetPort: 8403 }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-ms-system-aggregator-service
+  namespace: crm-demo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-ms-system-aggregator-service } }
+  template:
+    metadata: { labels: { app: pd-ms-system-aggregator-service } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_dms_ms_system_aggregator_service:pd-qa-latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 8404 }]
+          env:
+            - { name: SERVER_PORT, value: "8404" }
+            - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, valueFrom: { configMapKeyRef: { name: eureka, key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE } } }
+            - { name: EUREKA_INSTANCE_PREFER_IP_ADDRESS, value: "true" }
+            - { name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWKSETURI, valueFrom: { configMapKeyRef: { name: eureka, key: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI } } }
+            - { name: SECURITY_OAUTH2_RESOURCE_TOKENINFOURI, value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            - { name: AUTH_TOKEN_CHECK_URL,    value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            - { name: PROXY_PATH, valueFrom: { configMapKeyRef: { name: eureka, key: PUBLIC_BASE_URL } } }
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-ms-system-aggregator-service, namespace: crm-demo }
+spec:
+  selector: { app: pd-ms-system-aggregator-service }
+  ports: [{ port: 8404, targetPort: 8404 }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-ms-system-file-service
+  namespace: crm-demo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-ms-system-file-service } }
+  template:
+    metadata: { labels: { app: pd-ms-system-file-service } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_dms_ms_system_file_service:pd-qa-latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 8405 }]
+          env:
+            - { name: SERVER_PORT, value: "8405" }
+            - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, valueFrom: { configMapKeyRef: { name: eureka, key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE } } }
+            - { name: EUREKA_INSTANCE_PREFER_IP_ADDRESS, value: "true" }
+            - { name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWKSETURI, valueFrom: { configMapKeyRef: { name: eureka, key: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI } } }
+            - { name: SECURITY_OAUTH2_RESOURCE_TOKENINFOURI, value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            - { name: AUTH_TOKEN_CHECK_URL,    value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-ms-system-file-service, namespace: crm-demo }
+spec:
+  selector: { app: pd-ms-system-file-service }
+  ports: [{ port: 8405, targetPort: 8405 }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-ms-activity-service
+  namespace: crm-demo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-ms-activity-service } }
+  template:
+    metadata: { labels: { app: pd-ms-activity-service } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_dms_ms_activity_service:pd-qa-latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 8406 }]
+          env:
+            - { name: SERVER_PORT, value: "8406" }
+            - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, valueFrom: { configMapKeyRef: { name: eureka, key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE } } }
+            - { name: EUREKA_INSTANCE_PREFER_IP_ADDRESS, value: "true" }
+            - { name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWKSETURI, valueFrom: { configMapKeyRef: { name: eureka, key: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI } } }
+            - { name: SECURITY_OAUTH2_RESOURCE_TOKENINFOURI, value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            - { name: AUTH_TOKEN_CHECK_URL,    value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-ms-activity-service, namespace: crm-demo }
+spec:
+  selector: { app: pd-ms-activity-service }
+  ports: [{ port: 8406, targetPort: 8406 }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-ms-case-note-service
+  namespace: crm-demo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-ms-case-note-service } }
+  template:
+    metadata: { labels: { app: pd-ms-case-note-service } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_dms_ms_case_note_service:pd-qa-latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 8407 }]
+          env:
+            - { name: SERVER_PORT, value: "8407" }
+            - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, valueFrom: { configMapKeyRef: { name: eureka, key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE } } }
+            - { name: EUREKA_INSTANCE_PREFER_IP_ADDRESS, value: "true" }
+            - { name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWKSETURI, valueFrom: { configMapKeyRef: { name: eureka, key: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI } } }
+            - { name: SECURITY_OAUTH2_RESOURCE_TOKENINFOURI, value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            - { name: AUTH_TOKEN_CHECK_URL,    value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            - { name: FILE_DOWNLOAD_ENDPOINT, valueFrom: { configMapKeyRef: { name: eureka, key: FILE_DOWNLOAD_ENDPOINT } } }
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-ms-case-note-service, namespace: crm-demo }
+spec:
+  selector: { app: pd-ms-case-note-service }
+  ports: [{ port: 8407, targetPort: 8407 }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-crm-react-frontend
+  namespace: crm-demo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-crm-react-frontend } }
+  template:
+    metadata: { labels: { app: pd-crm-react-frontend } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_crm_react_front_end:pd4-qa-latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 80 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-crm-react-frontend, namespace: crm-demo }
+spec:
+  selector: { app: pd-crm-react-frontend }
+  ports: [{ port: 80, targetPort: 80 }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-crm-web-jsp
+  namespace: crm-demo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-crm-web-jsp } }
+  template:
+    metadata: { labels: { app: pd-crm-web-jsp } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_crm_web_jsp:pd-qa-latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 8222 }]
+          env:
+            - { name: SERVER_PORT, value: "8222" }
+            - { name: SERVER_SERVLET_CONTEXT_PATH, value: "/lg/" }
+            - { name: PROXY_PATH, value: "https://crm-demo.affiniti-crm2.duckdns.org/md" }
+            - { name: AUTH_TOKEN_CREATE_URL,  value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/token" }
+            - { name: AUTH_TOKEN_REFRESH_URL, value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/token" }
+            - { name: AUTH_TOKEN_CHECK_URL,   value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            # Original compose pointed at 178.128.92.244 (Jasper/Finance host).
+            - { name: SESSION_TIMEOUT_URL,    value: "http://178.128.92.244:80/AFFINITI_DMS_FINANCE_WEB/?auth=logout" }
+            - { name: JASPER_HOST, value: "178.128.92.244" }
+            - { name: JASPER_PORT, value: "9191" }
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-crm-web-jsp, namespace: crm-demo }
+spec:
+  selector: { app: pd-crm-web-jsp }
+  ports: [{ port: 8222, targetPort: 8222 }]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-ms-marketing-module-service
+  namespace: crm-demo
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-ms-marketing-module-service } }
+  template:
+    metadata: { labels: { app: pd-ms-marketing-module-service } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_crm_marketing_module:mrkt-drop1-latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 7015 }]
+          env:
+            - { name: SERVER_PORT, value: "7015" }
+            - { name: SCHEMA_DATABASE, value: "pdcrmdev03" }
+            - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, valueFrom: { configMapKeyRef: { name: eureka, key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE } } }
+            - { name: EUREKA_INSTANCE_PREFER_IP_ADDRESS, value: "true" }
+            - { name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWKSETURI, valueFrom: { configMapKeyRef: { name: eureka, key: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI } } }
+            - { name: SECURITY_OAUTH2_RESOURCE_TOKENINFOURI, value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            - { name: AUTH_TOKEN_CHECK_URL,    value: "http://pd-ms-auth-service:8401/api/auth-service/oauth/check_token" }
+            - { name: FILE_DOWNLOAD_ENDPOINT, valueFrom: { configMapKeyRef: { name: eureka, key: FILE_DOWNLOAD_ENDPOINT } } }
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-ms-marketing-module-service, namespace: crm-demo }
+spec:
+  selector: { app: pd-ms-marketing-module-service }
+  ports: [{ port: 7015, targetPort: 7015 }]
+
+# ─── Worker/scheduler ──────────────────────────────────────────────────────
+# NOTE: pd-360-es-sv is the same jar that fails on affiniti-common Spring Security 6
+# incompatibility in crm-dev — kept at replicas: 0 pending the dev-team fix.
+# See HANDOVER.md "Known Issues & Technical Debt" #1.
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-360-es-sv
+  namespace: crm-demo
+spec:
+  replicas: 0
+  selector: { matchLabels: { app: pd-360-es-sv } }
+  template:
+    metadata: { labels: { app: pd-360-es-sv } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_hnbf_360_es_sv:pd-qa-latest
+          imagePullPolicy: Always
+          env:
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+            - { name: CRONJOB_EXECUTION_HRS, value: "11" }
+            - { name: CRONJOB_EXECUTION_MIN, value: "45" }
+            - { name: CRONJOB_DELAY, value: "100000" }
+            - { name: CRONJOB_START_TIME, value: "08:00:00" }
+            - { name: CRONJOB_END_TIME, value: "20:00:00" }
