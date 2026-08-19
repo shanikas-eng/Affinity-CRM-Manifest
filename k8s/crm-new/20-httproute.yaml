@@ -38,7 +38,7 @@ spec:
           urlRewrite:
             path:
               type: ReplacePrefixMatch
-              replacePrefix: /
+              replacePrefixMatch: /
       backendRefs:
         - name: pd-authorization-frontend
           port: 80
