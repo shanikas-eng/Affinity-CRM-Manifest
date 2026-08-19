@@ -21,7 +21,7 @@
 These stay out of Argo's control because losing them via a stray `prune` would be catastrophic:
 
 - **Namespaces** (`00-namespace.yaml` files are `exclude`d in each Application `source.directory.exclude`)
-- **Secrets** — `dockerhub` (Docker Hub PAT), `mariadb` (DB creds). Created via `kubectl create secret` per runbook § 3.3–3.4. Store the raw values in a password manager, **not** in git.
+- **Secrets** — `dockerhub` (Docker Hub PAT), `mariadb` (DB creds), `workflow-executor` (workflow-service execution-callback OAuth2 client secret, `crm-new` only). Created via `kubectl create secret` per runbook § 3.3–3.4 (and, for `workflow-executor`, per `docs/requirement/authorization-module/frontend_module_federation_progress.md` §5.4). Store the raw values in a password manager, **not** in git.
 - **Gateway API `Gateway` + `Certificate` + `ClusterIssuer`** — Phase 1 resources, live in `gateway-system` / `cert-manager`, out of scope for this Argo project.
 
 If later you want secrets in git, use [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets) or [External Secrets Operator](https://external-secrets.io/) — do NOT commit raw `Secret` YAMLs.

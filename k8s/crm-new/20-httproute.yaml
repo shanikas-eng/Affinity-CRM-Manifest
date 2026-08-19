@@ -23,6 +23,25 @@ spec:
       backendRefs:
         - name: pd-api-gateway-service
           port: 8402
+    # Authorization Module frontend (Module Federation remote) — served under
+    # /authorization so it is same-origin with the host SPA (no CORS negotiation
+    # for remoteEntry.js).
+    #
+    # The Vite build sets base='/authorization/' so index.html references its
+    # assets as /authorization/assets/...; the URLRewrite filter below strips
+    # that prefix so the container's nginx (serving from /) finds them at
+    # /usr/share/nginx/html/assets/... . Keeps the container image generic.
+    - matches:
+        - path: { type: PathPrefix, value: /authorization }
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefix: /
+      backendRefs:
+        - name: pd-authorization-frontend
+          port: 80
     # React SPA — everything else
     - matches:
         - path: { type: PathPrefix, value: / }

@@ -7,6 +7,34 @@ data:
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://pd-discovery-service:8400/eureka"
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI: "http://pd-ms-auth-service:8401/api/auth-service/oauth/jwks"
 ---
+# Workflow-service extra config (Flowable engine + execution-callback OAuth2 client).
+#
+# Env-var names follow Spring Boot 3 relaxed-binding rules:
+#   - Dots in property names → underscores.
+#   - Hyphens within a segment are STRIPPED (client-id → CLIENTID,
+#     flowable-datasource.url → FLOWABLEDATASOURCE_URL).
+#
+# The executor client secret is stored in the `workflow-executor` k8s Secret
+# (bootstrap out-of-band, see secrets.example.yaml pattern).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workflow-service-config
+  namespace: crm-new
+data:
+  # affiniti.authorization.executor.token-uri — cluster-internal token endpoint.
+  AFFINITI_AUTHORIZATION_EXECUTOR_TOKENURI: "http://pd-ms-auth-service:8401/api/auth-service/oauth/token"
+  # affiniti.authorization.executor.client-id — OAuth2 client seeded via Flyway V106.
+  AFFINITI_AUTHORIZATION_EXECUTOR_CLIENTID: "workflow-service-executor"
+  # flowable-datasource.url — Flowable engine DB (isolated from business schema).
+  # Schema MUST exist in MariaDB before the pod boots — Flowable auto-creates its
+  # ~40 engine tables on first startup if the schema is present.
+  # NOTE: swap the schema name to whatever the QA MariaDB actually uses
+  # (e.g. pdcrmdev03_flowable to match the existing `mariadb` secret's schema).
+  FLOWABLEDATASOURCE_URL: "jdbc:mariadb://178.128.24.68:3306/dev05_flowable?zeroDateTimeBehavior=convertToNull"
+  # flowable-datasource.driver-class-name
+  FLOWABLEDATASOURCE_DRIVERCLASSNAME: "org.mariadb.jdbc.Driver"
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:

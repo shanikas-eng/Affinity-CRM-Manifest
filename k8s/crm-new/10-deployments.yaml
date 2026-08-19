@@ -475,3 +475,91 @@ spec:
             - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
             - { name: APP_MAIL_SERVICE_RUN, value: "true" }
             - { name: APP_SMS_SERVICE_RUN, value: "true" }
+
+# ─── Workflow service (Flowable OSS engine + Authorization Module backend) ───
+# NEW on the v3_dev pull (2026-08-19). Powers the Authorization Module screens
+# rendered by pd-authorization-frontend below. Two datasources by design:
+#   - primary (mariadb secret): business tables (authorization_rule, request, ...).
+#   - flowable-datasource:      Flowable engine tables, isolated schema.
+# Prereqs before scaling up:
+#   1. Flyway V91-V106 applied to primary QA schema (seeds V106 workflow-service-executor).
+#   2. Flowable schema (see workflow-service-config ConfigMap) exists in MariaDB.
+#   3. `workflow-executor` k8s Secret with key `client-secret` exists in this namespace.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-ms-workflow-service
+  namespace: crm-new
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-ms-workflow-service } }
+  template:
+    metadata: { labels: { app: pd-ms-workflow-service } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_ms_workflow_service:pd-revamp-latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 8184 }]
+          env:
+            - { name: SERVER_PORT, value: "8184" }
+            - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, valueFrom: { configMapKeyRef: { name: eureka, key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE } } }
+            - { name: EUREKA_INSTANCE_PREFER_IP_ADDRESS, value: "true" }
+            - { name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWKSETURI, valueFrom: { configMapKeyRef: { name: eureka, key: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI } } }
+            # Business datasource — shared MariaDB secret.
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+            # Flowable engine datasource — isolated schema (creds reused from mariadb secret).
+            # Spring relaxed-binding: flowable-datasource.url → FLOWABLEDATASOURCE_URL (hyphens stripped).
+            - { name: FLOWABLEDATASOURCE_URL, valueFrom: { configMapKeyRef: { name: workflow-service-config, key: FLOWABLEDATASOURCE_URL } } }
+            - { name: FLOWABLEDATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
+            - { name: FLOWABLEDATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+            - { name: FLOWABLEDATASOURCE_DRIVERCLASSNAME, valueFrom: { configMapKeyRef: { name: workflow-service-config, key: FLOWABLEDATASOURCE_DRIVERCLASSNAME } } }
+            # Execution-callback OAuth2 client (workflow-service-executor).
+            # affiniti.authorization.executor.{client-id,client-secret,token-uri}
+            #   → hyphens stripped: CLIENTID / CLIENTSECRET / TOKENURI
+            - { name: AFFINITI_AUTHORIZATION_EXECUTOR_CLIENTID,     valueFrom: { configMapKeyRef: { name: workflow-service-config, key: AFFINITI_AUTHORIZATION_EXECUTOR_CLIENTID } } }
+            - { name: AFFINITI_AUTHORIZATION_EXECUTOR_TOKENURI,     valueFrom: { configMapKeyRef: { name: workflow-service-config, key: AFFINITI_AUTHORIZATION_EXECUTOR_TOKENURI } } }
+            - { name: AFFINITI_AUTHORIZATION_EXECUTOR_CLIENTSECRET, valueFrom: { secretKeyRef: { name: workflow-executor, key: client-secret } } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-ms-workflow-service, namespace: crm-new }
+spec:
+  selector: { app: pd-ms-workflow-service }
+  ports: [{ port: 8184, targetPort: 8184 }]
+
+# ─── Authorization frontend (Module Federation remote) ─────────────────────
+# NEW on the v3_dev pull (2026-08-19). Consumed by pd-v3-crm-frontend at
+# runtime via /authorization/assets/remoteEntry.js. Deployment is entirely
+# independent of the host — redeploying this image (same URL) is picked up
+# by the host immediately with no host rebuild.
+# See docs/requirement/authorization-module/frontend_module_federation_progress.md
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-authorization-frontend
+  namespace: crm-new
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: pd-authorization-frontend } }
+  template:
+    metadata: { labels: { app: pd-authorization-frontend } }
+    spec:
+      imagePullSecrets: [{ name: dockerhub }]
+      containers:
+        - name: app
+          image: sysadminaffiniti/affiniti_crm_authorization_front_end:pd-revamp-latest
+          imagePullPolicy: Always   # mutable tag — always check registry on pod start
+          ports: [{ containerPort: 80 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: pd-authorization-frontend, namespace: crm-new }
+spec:
+  selector: { app: pd-authorization-frontend }
+  ports: [{ port: 80, targetPort: 80 }]
