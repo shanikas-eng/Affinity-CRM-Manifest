@@ -500,7 +500,7 @@ spec:
       imagePullSecrets: [{ name: dockerhub }]
       containers:
         - name: app
-          image: sysadminaffiniti/affiniti_ms_workflow_service:pd-revamp-latest
+          image: sysadminaffiniti/affiniti_ms_workflow_service:1.0.0.2144
           imagePullPolicy: Always
           ports: [{ containerPort: 8184 }]
           env:
