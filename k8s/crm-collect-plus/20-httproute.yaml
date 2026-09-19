@@ -1,0 +1,50 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: crm-collect-plus
+  namespace: crm-collect-plus
+spec:
+  parentRefs:
+    - name: public
+      namespace: gateway-system
+      sectionName: https-crm
+  hostnames:
+    - "crm-collect-plus.affiniti-crm2.duckdns.org"
+  rules:
+    # Auth service — dedicated path, must beat /api catch-all
+    - matches:
+        - path: { type: PathPrefix, value: /api/auth-service }
+      backendRefs:
+        - name: pd-ms-auth-service
+          port: 8401
+    # All other API traffic → API Gateway
+    - matches:
+        - path: { type: PathPrefix, value: /api }
+      backendRefs:
+        - name: pd-api-gateway-service
+          port: 8402
+    # Authorization Module frontend (Module Federation remote) — served under
+    # /authorization so it is same-origin with the host SPA (no CORS negotiation
+    # for remoteEntry.js).
+    #
+    # The Vite build sets base='/authorization/' so index.html references its
+    # assets as /authorization/assets/...; the URLRewrite filter below strips
+    # that prefix so the container's nginx (serving from /) finds them at
+    # /usr/share/nginx/html/assets/... . Keeps the container image generic.
+    - matches:
+        - path: { type: PathPrefix, value: /authorization }
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: pd-authorization-frontend
+          port: 80
+    # React SPA — everything else
+    - matches:
+        - path: { type: PathPrefix, value: / }
+      backendRefs:
+        - name: pd-v3-crm-frontend
+          port: 80
