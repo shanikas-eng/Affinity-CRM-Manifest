@@ -383,7 +383,7 @@ metadata:
     # :v3-latest and the pinned :1.0.1.807 that compose was using — same error.
     # Rebuild image with spring-security-core on classpath, then scale to 1.
 spec:
-  replicas: 0
+  replicas: 1
   selector: { matchLabels: { app: pd-360-es-sv } }
   template:
     metadata: { labels: { app: pd-360-es-sv } }
