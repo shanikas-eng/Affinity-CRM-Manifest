@@ -456,7 +456,7 @@ metadata:
     # :1.0.0.808 (the tag compose was using) — error persists.
     # Rebuild image, then scale to 1.
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-crm-notify-sv } }
   template:
     metadata: { labels: { app: pd-crm-notify-sv } }
