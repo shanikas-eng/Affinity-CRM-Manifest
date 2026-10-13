@@ -9,7 +9,7 @@ metadata:
   name: pd-discovery-service
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-discovery-service } }
   template:
     metadata: { labels: { app: pd-discovery-service } }
@@ -39,7 +39,7 @@ metadata:
   name: pd-ms-auth-service
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-ms-auth-service } }
   template:
     metadata: { labels: { app: pd-ms-auth-service } }
@@ -71,7 +71,7 @@ metadata:
   name: pd-api-gateway-service
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-api-gateway-service } }
   template:
     metadata: { labels: { app: pd-api-gateway-service } }
@@ -101,7 +101,7 @@ metadata:
   name: pd-ms-contact-lead-service
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-ms-contact-lead-service } }
   template:
     metadata: { labels: { app: pd-ms-contact-lead-service } }
@@ -141,7 +141,7 @@ metadata:
   name: pd-ms-system-aggregator-service
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-ms-system-aggregator-service } }
   template:
     metadata: { labels: { app: pd-ms-system-aggregator-service } }
@@ -176,7 +176,7 @@ metadata:
   name: pd-ms-system-file-service
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-ms-system-file-service } }
   template:
     metadata: { labels: { app: pd-ms-system-file-service } }
@@ -210,7 +210,7 @@ metadata:
   name: pd-ms-activity-service
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-ms-activity-service } }
   template:
     metadata: { labels: { app: pd-ms-activity-service } }
@@ -244,7 +244,7 @@ metadata:
   name: pd-ms-case-note-service
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-ms-case-note-service } }
   template:
     metadata: { labels: { app: pd-ms-case-note-service } }
@@ -279,7 +279,7 @@ metadata:
   name: pd-crm-react-frontend
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-crm-react-frontend } }
   template:
     metadata: { labels: { app: pd-crm-react-frontend } }
@@ -305,7 +305,7 @@ metadata:
   name: pd-crm-web-jsp
   namespace: crm-dev
 spec:
-  replicas: 1
+  replicas: 0
   selector: { matchLabels: { app: pd-crm-web-jsp } }
   template:
     metadata: { labels: { app: pd-crm-web-jsp } }
