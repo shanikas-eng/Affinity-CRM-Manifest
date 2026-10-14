@@ -161,6 +161,8 @@ spec:
             - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
             - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
             - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+            - { name: AUDIT_NOTIFICATION_ENABLED, value: "true" }
+            - { name: APP_FRONTEND_URL, value: "https://crm-new.affiniti-crm2.duckdns.org/" }
 ---
 apiVersion: v1
 kind: Service
