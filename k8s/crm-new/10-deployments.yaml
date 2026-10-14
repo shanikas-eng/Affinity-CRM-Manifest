@@ -62,6 +62,11 @@ spec:
             - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
             - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
             - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+            - { name: SERVER_SERVLET_SESSION_COOKIE_SECURE, value: "true" }
+            - { name: SERVER_SERVLET_SESSION_COOKIE_SAMESITE, value: "lax" }
+            - { name: AUTH_SESSION_REVOCATION_ENABLED, value: "true" }
+            - { name: AUTH_SESSION_REVOCATION_CLIENT_SECRET, value: "QpReoPhQEWTVpGQBbdZEjd8rssKxqzYW95aCal5-Wyyj" }
+            - { name: AUTH_SERVICE_URL, value: "http://pd-ms-auth-service:8401" }
 ---
 apiVersion: v1
 kind: Service
