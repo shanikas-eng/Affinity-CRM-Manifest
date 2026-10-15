@@ -42,20 +42,20 @@ spec:
       backendRefs:
         - name: pd-authorization-frontend
           port: 80
-    #Update Authorization Frontend Changes
+    # Update Authorization Frontend Changes
     - matches:
         - path:
-        type: PathPrefix
-        value: /authorization/assets
-        filters:
+            type: PathPrefix
+            value: /authorization/assets
+      filters:
         - type: URLRewrite
-        urlRewrite:
-        path:
-        type: ReplacePrefixMatch
-        replacePrefixMatch: /assets
-        backendRefs:
-        - name: pd-authorization-frontend # unchanged
-        port: 80 # unchanged
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /assets
+      backendRefs:
+        - name: pd-authorization-frontend
+          port: 80
     # React SPA — everything else
     - matches:
         - path: { type: PathPrefix, value: / }
