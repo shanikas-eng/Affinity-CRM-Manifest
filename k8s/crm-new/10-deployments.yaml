@@ -166,7 +166,7 @@ spec:
             - { name: SERVER_SERVLET_SESSION_COOKIE_SECURE, value: "true" }
             - { name: SERVER_SERVLET_SESSION_COOKIE_SAMESITE, value: "lax" }
             - { name: AUTH_SESSION_REVOCATION_ENABLED, value: "true" }
-            - { name: AUTH_SESSION_REVOCATION_CLIENT_SECRET, valueFrom: { secretKeyRef: { name: system-service-revoker, key: AUTH_SESSION_REVOCATION_CLIENT_SECRET }
+            - { name: AUTH_SESSION_REVOCATION_CLIENT_SECRET, valueFrom: { secretKeyRef: { name: system-service-revoker, key: AUTH_SESSION_REVOCATION_CLIENT_SECRET } } }
             - { name: AUTH_SERVICE_URL, value: "http://pd-ms-auth-service:8401" }
 ---
 apiVersion: v1
