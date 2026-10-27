@@ -390,7 +390,7 @@ metadata:
     # :v3-latest and the pinned :1.0.1.807 that compose was using — same error.
     # Rebuild image with spring-security-core on classpath, then scale to 1.
 spec:
-  replicas: 0
+  replicas: 1
   selector: { matchLabels: { app: pd-360-es-sv } }
   template:
     metadata: { labels: { app: pd-360-es-sv } }
@@ -417,6 +417,10 @@ spec:
             - { name: CROSSSELL_CRONJOB_RUN, value: "true" }
             - { name: CROSSSELL_CRONJOB_EXECUTIONTIME, value: "100000" }
             - { name: SLA_VIOLATION_EMAIL_EXECUTIONTIME, value: "0 47 17 * * *" }
+            - { name: SLA_ENGINE_ENABLED, value: "true" }
+            - { name: SLA_ENGINE_FREQUENT_CRON, value: "0 */10 * * * *" }
+            - { name: SLA_ENGINE_EOD_CRON, value: "0 0 22 * * *" }
+            - { name: SLA_ENGINE_LEAD_FREEZE_ENABLED, value: "false" }
 
 ---
 apiVersion: apps/v1
