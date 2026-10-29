@@ -404,6 +404,7 @@ spec:
             - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
             - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
             - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+            - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, valueFrom: { configMapKeyRef: { name: eureka, key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE } } }
             - { name: CRONJOB_EXECUTION_HRS, value: "11" }
             - { name: CRONJOB_EXECUTION_MIN, value: "45" }
             - { name: CRONJOB_DELAY, value: "100000" }
