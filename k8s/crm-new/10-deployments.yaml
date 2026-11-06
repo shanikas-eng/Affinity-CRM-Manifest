@@ -28,6 +28,7 @@ spec:
               value: "8400"
             - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
               value: "http://pd-discovery-service:8400/eureka"
+            - { name: AFFINITI_RBAC_ENFORCE, value: "true" }
 ---
 apiVersion: v1
 kind: Service
@@ -62,6 +63,7 @@ spec:
             - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
             - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
             - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+            - { name: AFFINITI_RBAC_ENFORCE, value: "true" }
 ---
 apiVersion: v1
 kind: Service
@@ -92,6 +94,7 @@ spec:
             - { name: SERVER_PORT, value: "8402" }
             - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, valueFrom: { configMapKeyRef: { name: eureka, key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE } } }
             - { name: EUREKA_INSTANCE_PREFER_IP_ADDRESS, value: "true" }
+            - { name: AFFINITI_RBAC_ENFORCE, value: "true" }
 ---
 apiVersion: v1
 kind: Service
@@ -127,6 +130,7 @@ spec:
             - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
             - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
             - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+            - { name: AFFINITI_RBAC_ENFORCE, value: "true" }
 ---
 apiVersion: v1
 kind: Service
@@ -168,6 +172,7 @@ spec:
             - { name: AUTH_SESSION_REVOCATION_ENABLED, value: "true" }
             - { name: AUTH_SESSION_REVOCATION_CLIENT_SECRET, valueFrom: { secretKeyRef: { name: system-service-revoker, key: AUTH_SESSION_REVOCATION_CLIENT_SECRET } } }
             - { name: AUTH_SERVICE_URL, value: "http://pd-ms-auth-service:8401" }
+            - { name: AFFINITI_RBAC_ENFORCE, value: "true" }
 ---
 apiVersion: v1
 kind: Service
@@ -202,6 +207,7 @@ spec:
             - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
             - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
             - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+            - { name: AFFINITI_RBAC_ENFORCE, value: "true" }
 ---
 apiVersion: v1
 kind: Service
@@ -236,6 +242,7 @@ spec:
             - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
             - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
             - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+            - { name: AFFINITI_RBAC_ENFORCE, value: "true" }
 ---
 apiVersion: v1
 kind: Service
@@ -270,6 +277,7 @@ spec:
             - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
             - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
             - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+            - { name: AFFINITI_RBAC_ENFORCE, value: "true" }
 ---
 apiVersion: v1
 kind: Service
@@ -304,6 +312,7 @@ spec:
             - { name: SPRING_DATASOURCE_URL,      valueFrom: { secretKeyRef: { name: mariadb, key: url } } }
             - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
             - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
+            - { name: AFFINITI_RBAC_ENFORCE, value: "true" }
 ---
 apiVersion: v1
 kind: Service
@@ -536,6 +545,7 @@ spec:
             - { name: AFFINITI_AUTHORIZATION_EXECUTOR_CLIENTID,     valueFrom: { configMapKeyRef: { name: workflow-service-config, key: AFFINITI_AUTHORIZATION_EXECUTOR_CLIENTID } } }
             - { name: AFFINITI_AUTHORIZATION_EXECUTOR_TOKENURI,     valueFrom: { configMapKeyRef: { name: workflow-service-config, key: AFFINITI_AUTHORIZATION_EXECUTOR_TOKENURI } } }
             - { name: AFFINITI_AUTHORIZATION_EXECUTOR_CLIENTSECRET, valueFrom: { secretKeyRef: { name: workflow-executor, key: client-secret } } }
+            - { name: AFFINITI_RBAC_ENFORCE, value: "true" }
 ---
 apiVersion: v1
 kind: Service
