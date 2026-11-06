@@ -521,7 +521,7 @@ spec:
       imagePullSecrets: [{ name: dockerhub }]
       containers:
         - name: app
-          image: sysadminaffiniti/affiniti_ms_workflow_service:1.0.0.2469
+          image: sysadminaffiniti/affiniti_ms_workflow_service:1.0.0.2751
           imagePullPolicy: Always
           ports: [{ containerPort: 8184 }]
           env:
