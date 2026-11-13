@@ -131,6 +131,13 @@ spec:
             - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
             - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
             - { name: AFFINITI_RBAC_ENFORCE, value: "true" }
+            - { name: META_VERIFY_TOKEN, value: "SQE6N7v8-vNK7PmcDBZHdRSUoXlZ9e2u" }
+            - { name: META_APP_SECRET, value: "b1d02419894e93524a50c845aaf53f11" }
+            - { name: META_PAGE_ACCESS_TOKEN, value: "EAAcUb3USP4cBS4xYijtKNZAwZB3EiYqzy1yALRmI2YoEIJiMl0SzmOEVpPFu6mZATdBECZAUF0NOmFbX9KnUSQjZCBCyUS1Sovc8PcrUlElD3VMntrf1xMRzLFDVQzLKUZAZBHKgiRCIV6dM8hEMK14yMsZCFdbCZBuWS3iHRZBxRxfmGVvMRtW5clOFLJXRO27yncVQZDZD" }
+            - { name: META_INTEGRATION_CLIENT_SECRET, value: "1UhV_P_iLJVJpbsxaGf0Rwu83bvF10ms2sJCIxN4JrU" }
+            - { name: META_PAGE_ID, value: "107398172638512" }
+            - { name: META_RETRY_ENABLED, value: "true" }
+            - { name: AUTH_SERVICE_URL, value: "http://pd-ms-auth-service:8401" }
 ---
 apiVersion: v1
 kind: Service
