@@ -64,6 +64,14 @@ spec:
             - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: mariadb, key: username } } }
             - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: mariadb, key: password } } }
             - { name: AFFINITI_RBAC_ENFORCE, value: "true" }
+            - { name: AUTH_REFRESH_COOKIE_ENABLED, value: "true" }
+            - { name: AUTH_REFRESH_COOKIE_NAME, value: "affiniti_rt" }
+            - { name: AUTH_REFRESH_COOKIE_CLIENTS, value: "spa-pkce-client-qa" }
+            - { name: AUTH_REFRESH_COOKIE_SECURE, value: "true" }
+            - { name: AUTH_REFRESH_COOKIE_STRIP_BODY, value: "true" }
+            - { name: SERVER_SERVLET_SESSION_COOKIE_SECURE, value: "true" }
+            - { name: SERVER_SERVLET_SESSION_COOKIE_SAMESITE, value: "lax" }
+            - { name: AUTH_ISSUERURI, value: "https://crm-new.affiniti-crm2.duckdns.org/api/auth-service" }
 ---
 apiVersion: v1
 kind: Service
